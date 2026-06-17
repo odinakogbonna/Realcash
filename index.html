@@ -1,0 +1,1356 @@
+My real page 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniPay - Full Application</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ==========================================
+           GLOBAL RE-USEABLE STYLES & VIEW ENGINE
+           ========================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #121212; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        /* Single SPA view containment wrapper */
+        .app-view {
+            display: none; /* Controlled by router showView function */
+            width: 100%;
+            height: 100%;
+        }
+
+        .app-view.active-view {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ==========================================
+           VIEW 1: INDEX (LOADING SCREEN) STYLES
+           ========================================== */
+        .phone-container-loading {
+            width: 100%;
+            max-width: 380px; 
+            height: 92vh;     
+            max-height: 780px;
+            background-color: #1a1a1a;
+            border: 2px solid #333333;
+            border-radius: 40px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .status-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .spinner-loading {
+            width: 100%;
+            height: 100%;
+            border: 5px solid #2a2a2a;
+            border-top: 5px solid #00e676; 
+            border-radius: 50%;
+            animation: spinLoading 1s linear infinite;
+            transition: opacity 0.4s ease;
+        }
+
+        @keyframes spinLoading {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .checkmark-wrapper {
+            position: absolute;
+            display: none; 
+            width: 50px;
+            height: 50px;
+        }
+
+        .checkmark {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 4;
+            stroke: #00e676;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #00e676;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s forwards;
+        }
+
+        .checkmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 4;
+            stroke-miterlimit: 10;
+            stroke: #00e676;
+            fill: none;
+            animation: strokeCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .checkmark__check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke-width: 4;
+            animation: strokeCheck 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+        }
+
+        @keyframes strokeCheck { 100% { stroke-dashoffset: 0; } }
+        @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+
+        .status-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #a0a0a0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        .status-text.verified { color: #00e676; }
+
+        /* ==========================================
+           VIEW 2: CONTINUE STYLES
+           ========================================== */
+        .phone-container-continue {
+            background-color: #ffffff;
+            width: 360px;
+            height: 740px;
+            border-radius: 36px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 8px solid white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 20px;
+            overflow: hidden;
+            color: #333333;
+            margin: auto;
+        }
+
+        .phone-container-continue::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            width: 60px;
+            height: 4px;
+            background-color: #222;
+            border-radius: 2px;
+        }
+
+        .welcome-text {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333333;
+            text-align: center;
+            line-height: 1.4;
+            margin-bottom: 40px;
+        }
+
+        .brand-text {
+            color: green; 
+            font-weight: 700;
+        }
+
+        .loader-continue {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spinContinue 1s linear infinite;
+        }
+
+        @keyframes spinContinue {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ==========================================
+           VIEW 3: LANG STYLES
+           ========================================== */
+        .phone-container-lang {
+            width: 360px;
+            height: 740px;
+            background-color: #ffffff;
+            border: 2px solid white;
+            border-radius: 36px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            margin: auto;
+        }
+
+        .phone-container-lang::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 25px;
+            background-color: #222;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            z-index: 10;
+        }
+
+        .header-lang {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .header-lang h1 {
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .language-list {
+            list-style: none;
+            padding: 10px 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .language-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 10px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+        }
+
+        .language-item:hover { background-color: #f9f9f9; }
+        .language-name { font-size: 1.1rem; color: #444; font-weight: 500; }
+
+        .radio-container { position: relative; display: inline-block; width: 22px; height: 22px; }
+        .radio-container input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .checkmark-radio { position: absolute; top: 0; left: 0; height: 22px; width: 22px; background-color: #fff; border: 2px solid #ccc; border-radius: 50%; }
+        .radio-container input:checked ~ .checkmark-radio { border-color: #007bff; background-color: #007bff; }
+        .checkmark-radio::after { content: ""; position: absolute; display: none; top: 6px; left: 6px; width: 6px; height: 6px; border-radius: 50%; background: white; }
+        .radio-container input:checked ~ .checkmark-radio::after { display: block; }
+
+        /* ==========================================
+           VIEW 4: LOGIN STYLES
+           ========================================== */
+        .login-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 340px; 
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            color: #333;
+            margin: auto;
+        }
+
+        .logo-area { margin-bottom: 25px; }
+        .logo-icon { width: 55px; height: 55px; border-radius: 50%; border: 3px solid #00c853; display: flex; justify-content: center; align-items: center; margin: 0 auto 8px auto; font-size: 26px; font-weight: bold; color: #00c853; }
+        .logo-text { font-size: 22px; font-weight: 700; color: #333333; letter-spacing: 0.5px; }
+        .input-group { text-align: left; margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; color: #666666; margin-bottom: 6px; font-weight: 500; }
+        .input-group input { width: 100%; padding: 11px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; background: white; color: #333; }
+        .input-group input:focus { border-color: #00c853; }
+        .remember-me { display: flex; align-items: center; text-align: left; margin-bottom: 20px; }
+        .remember-me input { margin-right: 8px; width: 16px; height: 16px; accent-color: #00c853; cursor: pointer; }
+        .remember-me label { font-size: 13px; color: #555555; cursor: pointer; }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-login { background-color: #00c853; color: #ffffff; margin-bottom: 15px; }
+        .btn-login:hover { background-color: #00a944; }
+        .divider { font-size: 12px; color: #888888; font-weight: 600; margin-bottom: 15px; position: relative; }
+        .btn-signup { background-color: transparent; color: #00c853; border: 1.5px solid #00c853; }
+        .btn-signup:hover { background-color: rgba(0, 200, 83, 0.05); }
+
+        /* ==========================================
+           VIEW 5: SIGNUP STYLES
+           ========================================== */
+        .phone-container-signup {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            border: 2px solid #333;
+            border-radius: 30px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            color: #333;
+            margin: auto;
+        }
+
+        .heading-signup { text-align: center; font-size: 28px; font-weight: 600; margin-bottom: 25px; color: #333; }
+        .form-group-signup { margin-bottom: 15px; }
+        .form-row-signup { display: flex; gap: 12px; margin-bottom: 15px; }
+        .form-row-signup .form-group-signup { flex: 1; margin-bottom: 0; }
+        .form-group-signup label { display: block; font-size: 14px; color: #555; margin-bottom: 5px; font-weight: 500; }
+        .input-wrapper-signup { position: relative; display: flex; align-items: center; width: 100%; }
+        
+        .phone-container-signup input[type="text"],
+        .phone-container-signup input[type="email"],
+        .phone-container-signup input[type="password"],
+        .phone-container-signup input[type="date"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background: white; color: #333;
+        }
+        .phone-container-signup input:focus { border-color: #007bff; }
+        .toggle-password { position: absolute; right: 10px; background: none; border: none; cursor: pointer; font-size: 16px; color: #777; padding: 0 5px; }
+        .meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; margin-bottom: 25px; }
+        .date-picker { width: 130px; }
+        .radio-group-signup { display: flex; gap: 15px; font-size: 14px; color: #444; }
+        .radio-label-signup { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        
+        .btn-submit { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
+        .btn-submit:hover { background-color: #0056b3; }
+        .footer-text { text-align: center; font-size: 14px; color: #666; }
+        .btn-signin { background: none; border: none; color: #007bff; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0 5px; }
+
+        /* ==========================================
+           VIEW 6: OTP STYLES
+           ========================================== */
+        .otp-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 375px; 
+            padding: 30px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #333;
+            margin: auto;
+        }
+
+        .close-btn { position: absolute; top: 20px; left: 20px; background: none; border: none; font-size: 22px; color: #333; cursor: pointer; padding: 4px; line-height: 1; }
+        .otp-container h2 { font-size: 24px; font-weight: 700; color: #1d1d1f; margin-top: 24px; margin-bottom: 12px; }
+        .otp-container p { font-size: 14px; color: #6e6e73; line-height: 1.5; margin-bottom: 32px; }
+        .otp-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; }
+        
+        .otp-inputs input {
+            width: 50px; height: 50px; font-size: 20px; font-weight: 600; text-align: center; border: 1.5px solid #d2d2d7; border-radius: 10px; outline: none; background: white; color: #333;
+        }
+        .otp-inputs input:focus { border-color: #0071e3; }
+        .otp-inputs.error input { border-color: #ff3b30 !important; background-color: #fff2f2; }
+        .otp-inputs input::-webkit-outer-spin-button, .otp-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .error-message { font-size: 13px; color: #ff3b30; font-weight: 500; margin-bottom: 16px; height: 18px; visibility: hidden; }
+        .timer { font-size: 14px; color: #86868b; margin-bottom: 32px; font-weight: 500; }
+        .confirm-btn { width: 100%; background-color: #0071e3; color: white; border: none; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer; margin-bottom: 40px; }
+        .resend-section { font-size: 14px; color: #6e6e73; }
+        .resend-btn { background: none; border: none; color: #0071e3; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; text-decoration: none; }
+        .resend-btn:disabled { color: #d2d2d7; cursor: not-allowed; }
+
+        /* ==========================================
+           VIEW 7: HOME STYLES
+           ========================================== */
+        .app-container-home {
+            width: 100%;
+            max-width: 375px; 
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            color: #333;
+            margin: auto;
+        }
+
+        .header-home { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .profile-row { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; }
+        .logo-icon-home { font-size: 20px; color: #007aff; }
+        .search-bar { display: flex; align-items: center; background-color: #f0f0f2; border-radius: 10px; padding: 8px 12px; }
+        .search-input { flex: 1; border: none; background: transparent; outline: none; font-size: 14px; color: #333; }
+        .search-btn { border: none; background: transparent; cursor: pointer; color: #666; }
+        
+        .balance-card { background: linear-gradient(135deg, #1e293b, #0f172a); margin: 0 15px 15px 15px; border-radius: 15px; padding: 15px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; }
+        .balance-label { font-size: 13px; color: #94a3b8; margin-bottom: 5px; }
+        .balance-amount { font-size: 24px; font-weight: 700; }
+        .add-funds-btn { background-color: #007aff; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        
+        .actions-row { display: flex; gap: 12px; margin: 0 15px 15px 15px; }
+        .action-btn { flex: 1; background-color: #f0f0f2; border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; }
+        .action-btn:active { background-color: #e2e2e6; }
+        
+        .crypto-list { flex: 1; padding: 0 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 80px; }
+        .crypto-item { display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; cursor: pointer; text-align: left; width: 100%; }
+        .crypto-item:active { transform: scale(0.99); background-color: #fafafa; }
+        .crypto-info { display: flex; flex-direction: column; }
+        .crypto-name { font-weight: 600; font-size: 15px; color: #333; }
+        .crypto-symbol { font-size: 12px; color: #666; text-transform: uppercase; }
+        .crypto-price { font-weight: 600; font-size: 15px; color: #333; }
+        
+        .footer { position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background-color: #ffffff; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; align-items: center; padding-bottom: 5px; }
+        .nav-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #8e8e93; cursor: pointer; flex: 1; font-size: 11px; }
+        .nav-item.active { color: #007aff; }
+        .nav-item i { font-size: 20px; }
+        
+        .loader-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; visibility: hidden; }
+        .spinner-home { width: 45px; height: 45px; border: 4px solid #e5e7eb; border-top: 4px solid #007aff; border-radius: 50%; animation: spinHome 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spinHome { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { font-size: 15px; font-weight: 600; color: #111111; }
+
+        /* ==========================================
+           VIEW 8: ACTIVATION STYLES
+           ========================================== */
+        .phone-container-activation {
+            width: 100%;
+            max-width: 375px;
+            background-color: #1e1e1e;
+            border-radius: 30px;
+            border: 2px solid #333333;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin: auto;
+        }
+
+        .header-activation { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 30px; }
+        .back-btn-activation { position: absolute; left: 0; background: none; border: none; color: #ffffff; font-size: 24px; cursor: pointer; line-height: 1; }
+        .header-activation h1 { font-size: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #fff; }
+        .input-group-activation { margin-bottom: 16px; }
+        .input-field-activation { width: 100%; padding: 14px; background-color: rgba(255, 255, 255, 0.05); border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 14px; outline: none; }
+        .input-field-activation:focus { border-color: #00e676; }
+        
+        .file-group { margin-bottom: 16px; }
+        .file-label { display: inline-block; padding: 8px 16px; background-color: #333; border: 1px solid #333333; border-radius: 4px; font-size: 12px; cursor: pointer; color: #aaaaaa; }
+        #file-input { display: none; }
+        
+        .social-links { display: flex; justify-content: space-between; margin: 20px 0; }
+        .social-btn { width: 48%; padding: 10px; text-align: center; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; }
+        .whatsapp { background-color: #25D366; color: white; }
+        .telegram { background-color: #0088cc; color: white; }
+        .info-paragraph { font-size: 13px; color: #aaaaaa; line-height: 1.5; text-align: center; margin-bottom: 24px; }
+        
+        .loading-container-activation { margin-bottom: 24px; display: none; text-align: center; }
+        .progress-bar-bg { width: 100%; height: 8px; background-color: #333; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-bar-fill { width: 0%; height: 100%; background-color: #00e676; }
+        .loading-text-activation { font-size: 12px; color: #00e676; }
+        
+        .activate-btn { width: 100%; padding: 15px; background-color: transparent; border: 2px solid #00e676; color: #00e676; border-radius: 8px; font-size: 16px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .activate-btn:hover { background-color: #00e676; color: #000; }
+        .activate-btn:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+
+        /* ==========================================
+           VIEW 9: CONGRATULATIONS STYLES
+           ========================================== */
+        .mobile-container-congratulations {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            height: 680px;
+            border: 2px solid #333333;
+            border-radius: 40px;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            color: #333;
+            margin: auto;
+        }
+
+        .mobile-container-congratulations h1 { font-size: 2rem; color: #222222; margin-bottom: 20px; font-weight: 600; }
+        .mobile-container-congratulations p { font-size: 1.1rem; color: #666666; line-height: 1.6; margin-bottom: 60px; padding: 0 10px; }
+        .button-group { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .btn-cong { width: 100%; padding: 16px; font-size: 1.1rem; font-weight: 500; background-color: transparent; border: 2px solid #333333; border-radius: 8px; cursor: pointer; color: #333; }
+        .btn-cong:hover { background-color: #333333; color: #ffffff; }
+
+        /* ==========================================
+           VIEW 10: ERROR STYLES
+           ========================================== */
+        .mobile-container-error {
+            background-color: #ffffff;
+            width: 375px; 
+            height: 667px; 
+            border-radius: 36px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0;
+            color: #333;
+            margin: auto;
+        }
+
+        .go-back-btn { background: none; border: none; font-size: 24px; font-weight: bold; color: #333333; cursor: pointer; align-self: flex-start; padding: 8px; }
+        .content-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding-bottom: 60px; }
+        .error-heading { font-size: 28px; font-weight: 700; letter-spacing: 2px; color: #d93025; margin-bottom: 12px; }
+        .error-paragraph { font-size: 16px; color: #5f6368; line-height: 1.5; max-width: 80%; }
+
+        /* ==========================================
+           VIEW 11: RECEIVE STYLES
+           ========================================== */
+        .phone-container-receive {
+            background-color: #1e1e1e;
+            width: 100%;
+            max-width: 380px;
+            height: 680px;
+            border-radius: 30px;
+            border: 2px solid #333;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin: auto;
+        }
+
+        .back-btn-receive { position: absolute; top: 25px; left: 25px; background: none; border: none; color: #888; font-size: 24px; cursor: pointer; }
+        .form-content { margin-top: 60px; display: flex; flex-direction: column; gap: 20px; }
+        .phone-container-receive input { width: 100%; padding: 14px; background-color: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 16px; outline: none; }
+        .phone-container-receive input:focus { border-color: #00e676; }
+        .address-wrapper { display: flex; gap: 8px; }
+        .address-wrapper input { flex: 1; }
+        .paste-btn { background-color: #333; color: #00e676; border: 1px solid #444; padding: 0 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .receive-btn { background-color: #00e676; color: #121212; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="view-index" class="app-view active-view">
+        <div class="phone-container-loading">
+            <div class="status-wrapper">
+                <div class="spinner-loading" id="loadingSpinner"></div>
+                <div class="checkmark-wrapper" id="checkmarkWrapper">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="status-text" id="statusLabel" data-trans="loading">Loading...</div>
+        </div>
+    </div>
+
+    <div id="view-continue" class="app-view">
+        <div class="phone-container-continue">
+            <div class="welcome-text" id="welcomeTextContent">
+                Welcome To <br>
+                <span class="brand-text">minipay </span>
+            </div>
+            <div class="loader-continue"></div>
+        </div>
+    </div>
+
+    <div id="view-lang" class="app-view">
+        <div class="phone-container-lang">
+            <div class="header-lang">
+                <h1 id="page-title" data-trans="selectLang">Select Language</h1>
+            </div>
+            <form class="language-list" id="language-form" onsubmit="event.preventDefault();">
+                <label class="language-item">
+                    <span class="language-name" data-lang="en">English</span>
+                    <span class="radio-container">
+                        <input type="radio" name="language" value="English" data-code="en">
+                        <span class="checkmark-radio"></span>
+                    </span>
+                </label>
+                <label class="language-item">
+                    <span class="language-name" data-lang="de">German</span>
+                    <span class="radio-container">
+                        <input type="radio" name="language" value="German" data-code="de">
+                        <span class="checkmark-radio"></span>
+                    </span>
+                </label>
+                <label class="language-item">
+                    <span class="language-name" data-lang="it">Italian</span>
+                    <span class="radio-container">
+                        <input type="radio" name="language" value="Italian" data-code="it">
+                        <span class="checkmark-radio"></span>
+                    </span>
+                </label>
+                <label class="language-item">
+                    <span class="language-name" data-lang="pt">Portuguese</span>
+                    <span class="radio-container">
+                        <input type="radio" name="language" value="Portuguese" data-code="pt">
+                        <span class="checkmark-radio"></span>
+                    </span>
+                </label>
+                <label class="language-item">
+                    <span class="language-name" data-lang="es">Spanish</span>
+                    <span class="radio-container">
+                        <input type="radio" name="language" value="Spanish" data-code="es">
+                        <span class="checkmark-radio"></span>
+                    </span>
+                </label>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-login" class="app-view">
+        <div class="login-container">
+            <div class="logo-area">
+                <div class="logo-icon">M</div>
+                <div class="logo-text">minipay</div>
+            </div>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email" data-trans="emailLabel">Email address</label>
+                    <input type="email" id="email" placeholder="Enter email Address" data-trans-placeholder="emailPlaceholder" required>
+                </div>
+                <div class="input-group">
+                    <label for="password" data-trans="passwordLabel">Password</label>
+                    <input type="password" id="password" placeholder="Password" data-trans-placeholder="passwordPlaceholder" required>
+                </div>
+                <div class="remember-me">
+                    <input type="checkbox" id="remember">
+                    <label for="remember" data-trans="rememberMe">Remember me</label>
+                </div>
+                <button type="submit" class="btn btn-login" data-trans="loginBtn">LOGIN</button>
+            </form>
+            <div class="divider" data-trans="dividerOr">OR</div>
+            <button class="btn btn-signup" id="signupBtn" data-trans="signupBtnText">SIGNUP</button>
+        </div>
+    </div>
+
+    <div id="view-signup" class="app-view">
+        <div class="phone-container-signup">
+            <h1 class="heading-signup" data-trans="signupHeading">Sign up</h1>
+            <form id="signUpForm">
+                <div class="form-row-signup">
+                    <div class="form-group-signup">
+                        <label data-trans="firstNameLabel">First name</label>
+                        <input type="text" id="signup-firstname" placeholder="First name" data-trans-placeholder="firstNameLabel" required>
+                    </div>
+                    <div class="form-group-signup">
+                        <label data-trans="usernameLabel">Username</label>
+                        <input type="text" id="signup-username" placeholder="USERNAME" data-trans-placeholder="usernamePlaceholder" required>
+                    </div>
+                </div>
+                <div class="form-group-signup">
+                    <label data-trans="emailLabel">Email address</label>
+                    <input type="email" id="signup-email" placeholder="Your.email@example.com" data-trans-placeholder="signupEmailPlaceholder" required>
+                </div>
+                <div class="form-group-signup">
+                    <label data-trans="passwordLabel">Password</label>
+                    <div class="input-wrapper-signup">
+                        <input type="password" id="signup-password" placeholder="Enter a Password" data-trans-placeholder="signupPasswordPlaceholder" required>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('signup-password', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="form-group-signup">
+                    <label data-trans="confirmPasswordLabel">Confirm Password</label>
+                    <div class="input-wrapper-signup">
+                        <input type="password" id="confirmPassword" placeholder="Confirm your Password" data-trans-placeholder="confirmPasswordPlaceholder" required>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="form-group-signup">
+                    <label data-trans="promoCodeLabel">Promo Code</label>
+                    <input type="text" id="promoCode" placeholder="Enter Promo Code" data-trans-placeholder="promoCodePlaceholder">
+                </div>
+                <div class="meta-row">
+                    <input type="date" class="date-picker" value="2026-05-02" required>
+                    <div class="radio-group-signup">
+                        <label class="radio-label-signup">
+                            <input type="radio" name="gender" value="male" required> <span data-trans="maleGender">Male</span>
+                        </label>
+                        <label class="radio-label-signup">
+                            <input type="radio" name="gender" value="female"> <span data-trans="femaleGender">Female</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" data-trans="createAccountBtn">Create account</button>
+            </form>
+            <div class="footer-text">
+                <span data-trans="alreadyHaveAccount">Already have an account?</span> 
+                <button type="button" class="btn-signin" id="signInBtn" data-trans="signInBtnText">SignIn</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-otp" class="app-view">
+        <div class="otp-container">
+            <button class="close-btn" onclick="showView('view-signup')">&times;</button>
+            <h2 data-trans="otpTitle">OTP Verification</h2>
+            <p data-trans="otpDesc">We have sent the verification code to your email address</p>
+            <div class="otp-inputs" id="inputContainer">
+                <input type="number" maxlength="1" oninput="moveNext(this, 'otp2')" id="otp1" onkeydown="moveBack(event, '')">
+                <input type="number" maxlength="1" oninput="moveNext(this, 'otp3')" id="otp2" onkeydown="moveBack(event, 'otp1')">
+                <input type="number" maxlength="1" oninput="moveNext(this, 'otp4')" id="otp3" onkeydown="moveBack(event, 'otp2')">
+                <input type="number" maxlength="1" oninput="moveNext(this, '')" id="otp4" onkeydown="moveBack(event, 'otp3')">
+            </div>
+            <div class="error-message" id="errorMessage" data-trans="wrongCode">wrong code</div>
+            <div class="timer" id="timerDisplay">the code will expire in 05:00</div>
+            <button class="confirm-btn" onclick="validateOTP()" data-trans="confirmBtn">Confirm</button>
+            <div class="resend-section">
+                <span data-trans="didNotReceive">If you didn't receive code</span> <br>
+                <button class="resend-btn" id="resendBtn" onclick="restartTimer()" disabled data-trans="resendBtnText">Resend</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-home" class="app-view">
+        <div class="app-container-home">
+            <div class="loader-overlay" id="loaderOverlay">
+                <div class="spinner-home"></div>
+                <div class="loader-text" data-trans="processingTx">Processing Transaction...</div>
+            </div>
+            <div class="header-home">
+                <div class="profile-row">
+                    <i class="fa-solid fa-circle-user logo-icon-home"></i>
+                    <span id="home-greeting">Hey, John</span>
+                </div>
+                <div class="search-bar">
+                    <input type="text" class="search-input" placeholder="Search" data-trans-placeholder="searchPlaceholder">
+                    <button class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </div>
+            <div class="balance-card">
+                <div>
+                    <div class="balance-label" data-trans="availBalance">Available Balance</div>
+                    <div class="balance-amount" id="display-balance">$0.00</div>
+                </div>
+                <button class="add-funds-btn" id="add-funds" data-trans="addFunds">Add funds</button>
+            </div>
+            <div class="actions-row">
+                <button class="action-btn" id="withdraw" data-trans="withdrawBtn">Withdraw</button>
+                <button class="action-btn" id="transfer" data-trans="transferBtn">Transfer</button>
+            </div>
+            <div class="crypto-list">
+                <button class="crypto-item crypto-btn">
+                    <div class="crypto-info">
+                        <span class="crypto-name">Bitcoin</span>
+                        <span class="crypto-symbol">BTC</span>
+                    </div>
+                    <span class="crypto-price">$113,705.01</span>
+                </button>
+                <button class="crypto-item crypto-btn">
+                    <div class="crypto-info">
+                        <span class="crypto-name">Ethereum</span>
+                        <span class="crypto-symbol">ETH</span>
+                    </div>
+                    <span class="crypto-price">$4,301.87</span>
+                </button>
+                <button class="crypto-item crypto-btn">
+                    <div class="crypto-info">
+                        <span class="crypto-name">Binance</span>
+                        <span class="crypto-symbol">BNB</span>
+                    </div>
+                    <span class="crypto-price">$863.25</span>
+                </button>
+                <button class="crypto-item crypto-btn">
+                    <div class="crypto-info">
+                        <span class="crypto-name">Solana</span>
+                        <span class="crypto-symbol">SOL</span>
+                    </div>
+                    <span class="crypto-price">$187.32</span>
+                </button>
+                <button class="crypto-item crypto-btn">
+                    <div class="crypto-info">
+                        <span class="crypto-name">Cardano</span>
+                        <span class="crypto-symbol">ADA</span>
+                    </div>
+                    <span class="crypto-price">$0.88</span>
+                </button>
+            </div>
+            <div class="footer">
+                <button class="nav-item" id="nav-activate">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span data-trans="navActivate">Activate</span>
+                </button>
+                <button class="nav-item active" id="nav-home">
+                    <i class="fa-solid fa-house"></i>
+                    <span data-trans="navHome">Home</span>
+                </button>
+                <button class="nav-item" id="nav-loan">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span data-trans="navLoan">Loan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-activation" class="app-view">
+        <div class="phone-container-activation">
+            <div class="header-activation">
+                <button class="back-btn-activation" onclick="showView('view-home')">×</button>
+                <h1 data-trans="activationTitle">Gift Card</h1>
+            </div>
+            <div class="input-group-activation">
+                <input type="text" class="input-field-activation" placeholder="CARD TYPE" data-trans-placeholder="cardTypePlaceholder" id="card-type">
+            </div>
+            <div class="input-group-activation">
+                <input type="text" class="input-field-activation" placeholder="CARD CODE" data-trans-placeholder="cardCodePlaceholder" id="card-code">
+            </div>
+            <div class="input-group-activation">
+                <input type="number" class="input-field-activation" placeholder="CARD AMOUNT" data-trans-placeholder="cardAmountPlaceholder" id="card-amount">
+            </div>
+            <div class="file-group">
+                <label for="file-input" class="file-label" data-trans="chooseFile">Choose File</label>
+                <input type="file" id="file-input" onchange="updateFileLabel()">
+            </div>
+            <div class="social-links">
+                <a href="https://wa.me/+2347055347479" target="_blank" class="social-btn whatsapp" onclick="trackClick('whatsapp')">WhatsApp</a>
+                <a href="https://t.me/minipay_BFT" target="_blank" class="social-btn telegram" onclick="trackClick('telegram')">Telegram</a>
+            </div>
+            <p class="info-paragraph" data-trans="activationNotice">
+                Make sure you verify card first before activating your account. Click on WhatsApp or Telegram link for verification.
+            </p>
+            <div class="loading-container-activation" id="loading-area">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <div class="loading-text-activation" id="loading-label">Loading... 0%</div>
+            </div>
+            <button class="activate-btn" onclick="handleActivation()" id="activate-trigger" data-trans="activateBtnText">Activate</button>
+        </div>
+    </div>
+
+    <div id="view-congratulations" class="app-view">
+        <div class="mobile-container-congratulations">
+            <h1 data-trans="congTitle">Congratulation</h1>
+            <p data-trans="congDesc">your account is now activated you can now able to withdraw or send funds.</p>
+            <div class="button-group">
+                <button class="btn-cong" id="shareSaveBtn" data-trans="shareSaveBtnText">Share & Save</button>
+                <button class="btn-cong" onclick="showView('view-home')" data-trans="backHomeBtn">Back to home</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-error" class="app-view">
+        <div class="mobile-container-error">
+            <button class="go-back-btn" onclick="showView('view-activation')" aria-label="Go back">&#60;</button>
+            <div class="content-wrapper">
+                <h1 class="error-heading" data-trans="errorTitle">ERROR</h1>
+                <p class="error-paragraph" data-trans="errorDesc">You must verify card before investing.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-receive" class="app-view">
+        <div class="phone-container-receive">
+            <button class="back-btn-receive" onclick="showView('view-home')">×</button>
+            <div class="form-content">
+                <div class="input-group">
+                    <input type="text" id="username-receive" placeholder="Your username" data-trans-placeholder="usernameReceivePlaceholder">
+                </div>
+                <div class="address-wrapper">
+                    <input type="text" id="cryptoAddress" placeholder="Crypto Address" data-trans-placeholder="cryptoAddressPlaceholder">
+                    <button class="paste-btn" onclick="pasteAddress()" data-trans="pasteBtn">Paste</button>
+                </div>
+                <button class="receive-btn" onclick="processReceive()" data-trans="receiveBtnText">Receive</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CORE ROUTER MECHANISM ---
+        function showView(viewId) {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.remove('active-view');
+            });
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.add('active-view');
+                if (viewId === 'view-otp') restartTimer();
+                if (viewId === 'view-home') {
+                    refreshBalanceUI(storedBalance);
+                    updateHomeGreeting();
+                }
+            }
+        }
+
+        // --- 2. GLOBAL STATE MATRIX DATA & LOCAL STORAGE SYSTEMS ---
+        const TARGET_ADDRESS = "0x095418A82BC2439703b69fbE1210824F2247D77c";
+        
+        if (!localStorage.getItem('minipay_users')) {
+            localStorage.setItem('minipay_users', JSON.stringify([]));
+        }
+        
+        let currentSessionUser = JSON.parse(localStorage.getItem('minipay_active_session')) || null;
+        let storedBalance = 0.00;
+        let currentLangCode = localStorage.getItem('minipay_lang') || 'en';
+
+        if (currentSessionUser) {
+            storedBalance = parseFloat(currentSessionUser.balance || 0);
+        }
+
+        function refreshBalanceUI(amount) {
+            const displayEl = document.getElementById('display-balance');
+            if (displayEl) {
+                displayEl.innerText = `$${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        }
+
+        function updateHomeGreeting() {
+            const greetingEl = document.getElementById('home-greeting');
+            if (greetingEl) {
+                const name = currentSessionUser ? currentSessionUser.firstName : "John";
+                const greetingText = translations[currentLangCode].homeGreetingPattern.replace("{name}", name);
+                greetingEl.innerText = greetingText;
+            }
+        }
+
+        // --- 3. VIEW 1: LOADING (INDEX) CONTROLLER ---
+        const spinner = document.getElementById('loadingSpinner');
+        const checkmark = document.getElementById('checkmarkWrapper');
+        const label = document.getElementById('statusLabel');
+
+        setTimeout(() => {
+            if(spinner) spinner.style.display = 'none';
+            if(checkmark) checkmark.style.display = 'block';
+            if(label) {
+                label.textContent = translations[currentLangCode].verifiedStatus;
+                label.classList.add('verified');
+            }
+            setTimeout(() => { showView('view-continue'); }, 1500);
+        }, 6000);
+
+        // --- 4. VIEW 2: CONTINUE TIMEOUT LINK ---
+        setInterval(() => {
+            const wrapper = document.getElementById('view-continue');
+            if(wrapper && wrapper.classList.contains('active-view') && !wrapper.dataset.triggered) {
+                wrapper.dataset.triggered = "true";
+                setTimeout(() => { showView('view-lang'); }, 5000);
+            }
+        }, 500);
+
+        // --- 5. VIEW 3: LANGUAGE DICTIONARY CONTROLLER ---
+        const translations = {
+            en: {
+                title: "Select Language", english: "English", german: "German", italian: "Italian", portuguese: "Portuguese", spanish: "Spanish",
+                loading: "Loading...", verifiedStatus: "Verified",
+                welcomeText: "Welcome To <br><span class='brand-text'>minipay </span>",
+                selectLang: "Select Language", emailLabel: "Email address", emailPlaceholder: "Enter email Address",
+                passwordLabel: "Password", passwordPlaceholder: "Password", rememberMe: "Remember me",
+                loginBtn: "LOGIN", dividerOr: "OR", signupBtnText: "SIGNUP", signupHeading: "Sign up",
+                firstNameLabel: "First name", usernameLabel: "Username", usernamePlaceholder: "USERNAME",
+                signupEmailPlaceholder: "Your.email@example.com", signupPasswordPlaceholder: "Enter a Password",
+                confirmPasswordLabel: "Confirm Password", confirmPasswordPlaceholder: "Confirm your Password",
+                promoCodeLabel: "Promo Code", promoCodePlaceholder: "Enter Promo Code", maleGender: "Male",
+                femaleGender: "Female", createAccountBtn: "Create account", alreadyHaveAccount: "Already have an account?",
+                signInBtnText: "SignIn", otpTitle: "OTP Verification", otpDesc: "We have sent the verification code to your email address",
+                wrongCode: "wrong code", timerPattern: "the code will expire in {time}", confirmBtn: "Confirm",
+                didNotReceive: "If you didn't receive code", resendBtnText: "Resend", codeExpired: "the code has expired",
+                processingTx: "Processing Transaction...", searchPlaceholder: "Search", availBalance: "Available Balance",
+                addFunds: "Add funds", withdrawBtn: "Withdraw", transferBtn: "Transfer", navActivate: "Activate",
+                navHome: "Home", navLoan: "Loan", activationTitle: "Gift Card", cardTypePlaceholder: "CARD TYPE",
+                cardCodePlaceholder: "CARD CODE", cardAmountPlaceholder: "CARD AMOUNT", chooseFile: "Choose File",
+                activationNotice: "Make sure you verify card first before activating your account. Click on WhatsApp or Telegram link for verification.",
+                loadingLabelPattern: "Loading... {progress}%", activateBtnText: "Activate", congTitle: "Congratulation",
+                congDesc: "your account is now activated you can now able to withdraw or send funds.",
+                shareSaveBtnText: "Share & Save", backHomeBtn: "Back to home", errorTitle: "ERROR",
+                errorDesc: "You must verify card before investing.", usernameReceivePlaceholder: "Your username",
+                cryptoAddressPlaceholder: "Crypto Address", pasteBtn: "Paste", receiveBtnText: "Receive",
+                homeGreetingPattern: "Hey, {name}", accountNotExistMsg: "Account does not exist! Please create an account on the signup page first.",
+                passwordsNotMatchMsg: "Passwords do not match!", regLimitMsg: "Registration Limit Reached: You can only create a maximum of two accounts on one device.",
+                enterCryptoAddrMsg: "Please enter or paste a crypto address.", copyClipboardMsg: "Sharing is not supported. URL copied to clipboard instead!",
+                pasteManualMsg: "Please type or paste manually.", txCompleteUnrecognized: "Transaction processing completed. Notice: Crypto Address unrecognized.",
+                txSuccessMsg: "Funds Successfully Transferred! Deposited: +${amount}", verifyFirstMsg: "This code has expired! Please click Resend."
+            },
+            de: {
+                title: "Sprache wählen", english: "Englisch", german: "Deutsch", italian: "Italienisch", portuguese: "Portugiesisch", spanish: "Spanisch",
+                loading: "Laden...", verifiedStatus: "Verifiziert",
+                welcomeText: "Willkommen Bei <br><span class='brand-text'>minipay </span>",
+                selectLang: "Sprache wählen", emailLabel: "E-Mail-Adresse", emailPlaceholder: "E-Mail-Adresse eingeben",
+                passwordLabel: "Passwort", passwordPlaceholder: "Passwort", rememberMe: "Gemerkt wechseln",
+                loginBtn: "EINLOGGEN", dividerOr: "ODER", signupBtnText: "REGISTRIEREN", signupHeading: "Registrieren",
+                firstNameLabel: "Vorname", usernameLabel: "Benutzername", usernamePlaceholder: "BENUTZERNAME",
+                signupEmailPlaceholder: "Ihre.email@beispiel.com", signupPasswordPlaceholder: "Passwort eingeben",
+                confirmPasswordLabel: "Passwort bestätigen", confirmPasswordPlaceholder: "Bestätigen Sie Ihr Passwort",
+                promoCodeLabel: "Aktionscode", promoCodePlaceholder: "Aktionscode eingeben", maleGender: "Männlich",
+                femaleGender: "Weiblich", createAccountBtn: "Konto erstellen", alreadyHaveAccount: "Haben Sie bereits ein Konto?",
+                signInBtnText: "Einloggen", otpTitle: "OTP-Verifizierung", otpDesc: "Wir haben den Verifizierungscode an Ihre E-Mail-Adresse gesendet",
+                wrongCode: "Falscher Code", timerPattern: "Der Code läuft in {time} ab", confirmBtn: "Bestätigen",
+                didNotReceive: "Wenn Sie keinen Code erhalten haben", resendBtnText: "Erneut senden", codeExpired: "Der Code ist abgelaufen",
+                processingTx: "Transaktion wird verarbeitet...", searchPlaceholder: "Suche", availBalance: "Verfügbares Guthaben",
+                addFunds: "Guthaben aufladen", withdrawBtn: "Abheben", transferBtn: "Überweisen", navActivate: "Aktivieren",
+                navHome: "Startseite", navLoan: "Kredit", activationTitle: "Geschenkkarte", cardTypePlaceholder: "KARTENTYP",
+                cardCodePlaceholder: "KARTENCODE", cardAmountPlaceholder: "KARTENBETRAG", chooseFile: "Datei auswählen",
+                activationNotice: "Stellen Sie sicher, dass Sie die Karte zuerst verifizieren, bevor Sie Ihr Konto aktivieren. Klicken Sie zur Verifizierung auf den WhatsApp- oder Telegram-Link.",
+                loadingLabelPattern: "Laden... {progress}%", activateBtnText: "Aktivieren", congTitle: "Glückwunsch",
+                congDesc: "Ihr Konto ist jetzt aktiviert. Sie können nun Guthaben abheben oder senden.",
+                shareSaveBtnText: "Teilen & Speichern", backHomeBtn: "Zurück zur Startseite", errorTitle: "FEHLER",
+                errorDesc: "Sie müssen die Karte verifizieren, bevor Sie investieren.", usernameReceivePlaceholder: "Ihr Benutzername",
+                cryptoAddressPlaceholder: "Krypto-Adresse", pasteBtn: "Einfügen", receiveBtnText: "Empfangen",
+                homeGreetingPattern: "Hallo, {name}", accountNotExistMsg: "Konto existiert nicht! Bitte erstellen Sie zuerst ein Konto auf der Registrierungsseite.",
+                passwordsNotMatchMsg: "Passwörter stimmen nicht überein!", regLimitMsg: "Registrierungslimit erreicht: Sie können maximal zwei Konten auf einem Gerät erstellen.",
+                enterCryptoAddrMsg: "Bitte geben Sie eine Krypto-Adresse ein oder fügen Sie sie ein.", copyClipboardMsg: "Teilen wird nicht unterstützt. URL wurde stattdessen in die Zwischenablage kopiert!",
+                pasteManualMsg: "Bitte manuell eingeben oder einfügen.", txCompleteUnrecognized: "Transaktionsverarbeitung abgeschlossen. Hinweis: Krypto-Adresse nicht erkannt.",
+                txSuccessMsg: "Guthaben erfolgreich übertragen! Eingezahlt: +${amount}", verifyFirstMsg: "Dieser Code ist abgelaufen! Bitte klicken Sie auf Erneut senden."
+            },
+            it: {
+                title: "Seleziona Lingua", english: "Inglese", german: "Tedesco", italian: "Italiano", portuguese: "Portoghese", spanish: "Spagnolo",
+                loading: "Caricamento...", verifiedStatus: "Verificato",
+                welcomeText: "Benvenuto In <br><span class='brand-text'>minipay </span>",
+                selectLang: "Seleziona Lingua", emailLabel: "Indirizzo e-mail", emailPlaceholder: "Inserisci l'indirizzo e-mail",
+                passwordLabel: "Password", passwordPlaceholder: "Password", rememberMe: "Ricordami",
+                loginBtn: "ACCEDI", dividerOr: "OPPURE", signupBtnText: "ISCRIVITI", signupHeading: "Iscriviti",
+                firstNameLabel: "Nome", usernameLabel: "Nome utente", usernamePlaceholder: "NOME UTENTE",
+                signupEmailPlaceholder: "La_tua.email@esempio.com", signupPasswordPlaceholder: "Inserisci una Password",
+                confirmPasswordLabel: "Conferma Password", confirmPasswordPlaceholder: "Conferma la Password",
+                promoCodeLabel: "Codice Promo", promoCodePlaceholder: "Inserisci Codice Promo", maleGender: "Maschio",
+                femaleGender: "Femmina", createAccountBtn: "Crea account", alreadyHaveAccount: "Hai già un account?",
+                signInBtnText: "Accedi", otpTitle: "Verifica OTP", otpDesc: "Abbiamo inviato il codice di verifica al tuo indirizzo e-mail",
+                wrongCode: "Codice errato", timerPattern: "Il codice scadrà tra {time}", confirmBtn: "Conferma",
+                didNotReceive: "Se non hai ricevuto il codice", resendBtnText: "Invia di nuovo", codeExpired: "Il codice è scaduto",
+                processingTx: "Elaborazione della transazione...", searchPlaceholder: "Cerca", availBalance: "Saldo disponibile",
+                addFunds: "Aggiungi fondi", withdrawBtn: "Preleva", transferBtn: "Trasferisci", navActivate: "Attiva",
+                navHome: "Home", navLoan: "Prestito", activationTitle: "Carta Regalo", cardTypePlaceholder: "TIPO DI CARTA",
+                cardCodePlaceholder: "CODICE CARTA", cardAmountPlaceholder: "IMPORTO CARTA", chooseFile: "Scegli File",
+                activationNotice: "Assicurati di verificare prima la carta prima di attivare il tuo account. Clicca sul link WhatsApp o Telegram per la verifica.",
+                loadingLabelPattern: "Caricamento... {progress}%", activateBtnText: "Attiva", congTitle: "Congratulazioni",
+                congDesc: "Il tuo account è ora attivato. Ora puoi prelevare o inviare fondi.",
+                shareSaveBtnText: "Condividi e Salva", backHomeBtn: "Torna alla Home", errorTitle: "ERRORE",
+                errorDesc: "Devi verificare la carta prima di investire.", usernameReceivePlaceholder: "Il tuo nome utente",
+                cryptoAddressPlaceholder: "Indirizzo Crypto", pasteBtn: "Incolla", receiveBtnText: "Ricevi",
+                homeGreetingPattern: "Ciao, {name}", accountNotExistMsg: "L'account non esiste! Crea prima un account nella pagina di registrazione.",
+                passwordsNotMatchMsg: "Le password non corrispondono!", regLimitMsg: "Limite di registrazione raggiunto: puoi creare un massimo di due account su un dispositivo.",
+                enterCryptoAddrMsg: "Inserisci o incolla un indirizzo crypto.", copyClipboardMsg: "La condivisione non è supportata. L'URL è stato copiato negli appunti!",
+                pasteManualMsg: "Si prega di digitare o incollare manualmente.", txCompleteUnrecognized: "Elaborazione transazione completata. Nota: Indirizzo Crypto non riconosciuto.",
+                txSuccessMsg: "Fondi trasferiti con successo! Depositato: +${amount}", verifyFirstMsg: "Questo codice è scaduto! Fare clic su Invia di nuovo."
+            },
+            pt: {
+                title: "Selecionar Idioma", english: "Inglês", german: "Alemão", italian: "Italiano", portuguese: "Português", spanish: "Espanhol",
+                loading: "Carregando...", verifiedStatus: "Verificado",
+                welcomeText: "Bem-vindo Ao <br><span class='brand-text'>minipay </span>",
+                selectLang: "Selecionar Idioma", emailLabel: "Endereço de e-mail", emailPlaceholder: "Digite o endereço de e-mail",
+                passwordLabel: "Senha", passwordPlaceholder: "Senha", rememberMe: "Lembrar-me",
+                loginBtn: "ENTRAR", dividerOr: "OU", signupBtnText: "CADASTRAR", signupHeading: "Cadastrar",
+                firstNameLabel: "Primeiro nome", usernameLabel: "Nome de usuário", usernamePlaceholder: "NOME DE USUÁRIO",
+                signupEmailPlaceholder: "Seu.email@exemplo.com", signupPasswordPlaceholder: "Digite uma Senha",
+                confirmPasswordLabel: "Confirmar Senha", confirmPasswordPlaceholder: "Confirme sua Senha",
+                promoCodeLabel: "Código Promocional", promoCodePlaceholder: "Digite o Código Promocional", maleGender: "Masculino",
+                femaleGender: "Feminino", createAccountBtn: "Criar conta", alreadyHaveAccount: "Já tem uma conta?",
+                signInBtnText: "Entrar", otpTitle: "Verificação OTP", otpDesc: "Enviamos o código de verificação para o seu endereço de e-mail",
+                wrongCode: "Código incorreto", timerPattern: "O código irá expirar em {time}", confirmBtn: "Confirmar",
+                didNotReceive: "Se você não recebeu o código", resendBtnText: "Reenviar", codeExpired: "O código expirou",
+                processingTx: "Processando Transação...", searchPlaceholder: "Buscar", availBalance: "Saldo Disponível",
+                addFunds: "Adicionar fundos", withdrawBtn: "Sacar", transferBtn: "Transferir", navActivate: "Ativar",
+                navHome: "Início", navLoan: "Empréstimo", activationTitle: "Cartão Presente", cardTypePlaceholder: "TIPO DE CARTÃO",
+                cardCodePlaceholder: "CÓDIGO DO CARTÃO", cardAmountPlaceholder: "VALOR DO CARTÃO", chooseFile: "Escolher Arquivo",
+                activationNotice: "Certifique-se de verificar o cartão primeiro antes de ativar sua conta. Clique no link do WhatsApp ou Telegram para verificação.",
+                loadingLabelPattern: "Carregando... {progress}%", activateBtnText: "Ativar", congTitle: "Parabéns",
+                congDesc: "Sua conta está ativada. Agora você pode sacar ou enviar fundi.",
+                shareSaveBtnText: "Compartilhar e Salvar", backHomeBtn: "Voltar ao início", errorTitle: "ERRO",
+                errorDesc: "Você deve verificar o cartão antes de investir.", usernameReceivePlaceholder: "Seu nome de usuário",
+                cryptoAddressPlaceholder: "Endereço Crypto", pasteBtn: "Colar", receiveBtnText: "Receber",
+                homeGreetingPattern: "Olá, {name}", accountNotExistMsg: "A conta não existe! Por favor, crie uma conta na página de cadastro primeiro.",
+                passwordsNotMatchMsg: "As senhas não coincidem!", regLimitMsg: "Limite de registro atingido: Você só pode criar no máximo duas contas em um dispositivo.",
+                enterCryptoAddrMsg: "Por favor, digite ou cole um endereço crypto.", copyClipboardMsg: "O compartilhamento não é suportado. O URL foi copiado para a área de transferência!",
+                pasteManualMsg: "Por favor, digite ou cole manualmente.", txCompleteUnrecognized: "Processamento de transação concluído. Aviso: Endereço Crypto não reconhecido.",
+                txSuccessMsg: "Fundos transferidos com sucesso! Depositado: +${amount}", verifyFirstMsg: "Este código expirou! Clique em Reenviar."
+            },
+            es: {
+                title: "Seleccionar Idioma", english: "Inglés", german: "Alemán", italian: "Italiano", portuguese: "Portugués", spanish: "Español",
+                loading: "Cargando...", verifiedStatus: "Verificado",
+                welcomeText: "Bienvenido A <br><span class='brand-text'>minipay </span>",
+                selectLang: "Seleccionar Idioma", emailLabel: "Correo electrónico", emailPlaceholder: "Ingrese correo electrónico",
+                passwordLabel: "Contraseña", passwordPlaceholder: "Contraseña", rememberMe: "Recordarme",
+                loginBtn: "INICIAR SESIÓN", dividerOr: "O", signupBtnText: "REGISTRARSE", signupHeading: "Registrarse",
+                firstNameLabel: "Nombre", usernameLabel: "Usuario", usernamePlaceholder: "USUARIO",
+                signupEmailPlaceholder: "Tu.correo@ejemplo.com", signupPasswordPlaceholder: "Ingrese una Contraseña",
+                confirmPasswordLabel: "Confirmar Contraseña", confirmPasswordPlaceholder: "Confirme su Contraseña",
+                promoCodeLabel: "Código Promo", promoCodePlaceholder: "Ingrese Código Promo", maleGender: "Masculino",
+                femaleGender: "Femenino", createAccountBtn: "Crear cuenta", alreadyHaveAccount: "¿Ya tiene una cuenta?",
+                signInBtnText: "Ingresar", otpTitle: "Verificación OTP", otpDesc: "Hemos enviado el código de verificación a su dirección de correo electrónico",
+                wrongCode: "Código incorrecto", timerPattern: "El código expirará en {time}", confirmBtn: "Confirmar",
+                didNotReceive: "Si no recibió el código", resendBtnText: "Reenviar", codeExpired: "El código ha expirado",
+                processingTx: "Procesando Transacción...", searchPlaceholder: "Buscar", availBalance: "Saldo Disponible",
+                addFunds: "Añadir fondos", withdrawBtn: "Retirar", transferBtn: "Transferir", navActivate: "Activar",
+                navHome: "Inicio", navLoan: "Préstamo", activationTitle: "Tarjeta de Regalo", cardTypePlaceholder: "TIPO DE TARJETA",
+                cardCodePlaceholder: "CÓDIGO DE TARJETA", cardAmountPlaceholder: "MONTO DE TARJETA", chooseFile: "Seleccionar Archivo",
+                activationNotice: "Asegúrese de verificar la tarjeta primero antes de activar su cuenta. Haga clic en el enlace de WhatsApp o Telegram para la verificación.",
+                loadingLabelPattern: "Cargando... {progress}%", activateBtnText: "Activar", congTitle: "Felicitaciones",
+                congDesc: "Su cuenta ya está activada. Ahora puede retirar o enviar fondos.",
+                shareSaveBtnText: "Compartir y Guardar", backHomeBtn: "Voltar al inicio", errorTitle: "ERROR",
+                errorDesc: "Debe verificar la tarjeta antes de invertir.", usernameReceivePlaceholder: "Su usuario",
+                cryptoAddressPlaceholder: "Dirección Crypto", pasteBtn: "Pegar", receiveBtnText: "Recibir",
+                homeGreetingPattern: "Hola, {name}", accountNotExistMsg: "¡La cuenta no existe! Por favor, cree una cuenta en la página de registro primero.",
+                passwordsNotMatchMsg: "¡Las contraseñas no coinciden!", regLimitMsg: "Límite de registro alcanzado: Solo puede crear un máximo de dos cuentas en un dispositivo.",
+                enterCryptoAddrMsg: "Por favor, ingrese o pegue una dirección crypto.", copyClipboardMsg: "El soporte para compartir no está disponible. ¡El enlace fue copiado al portapapeles!",
+                pasteManualMsg: "Por favor escriba o pegue manualmente.", txCompleteUnrecognized: "Procesamiento de transacción completado. Nota: Dirección Crypto no reconocida.",
+                txSuccessMsg: "¡Fondos transferidos con éxito! Depositado: +${amount}", verifyFirstMsg: "¡Este código ha expirado! Por favor haga clic en Reenviar."
+            }
+        };
+
+        function applyTranslations() {
+            const lang = currentLangCode;
+            localStorage.setItem('minipay_lang', lang);
+            
+            // 1. Text elements translations
+            document.querySelectorAll('[data-trans]').forEach(element => {
+                const key = element.getAttribute('data-trans');
+                if (translations[lang][key]) {
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+
+            // 2. Input Placeholders translations
+            document.querySelectorAll('[data-trans-placeholder]').forEach(input => {
+                const key = input.getAttribute('data-trans-placeholder');
+                if (translations[lang][key]) {
+                    input.placeholder = translations[lang][key];
+                }
+            });
+
+            // 3. Static specialized layouts updates
+            const welcomeEl = document.getElementById('welcomeTextContent');
+            if (welcomeEl) welcomeEl.innerHTML = translations[lang].welcomeText;
+            
+            // Sync up specific list updates if view active
+            updateHomeGreeting();
+        }
+
+        document.querySelectorAll('input[name="language"]').forEach(radio => {
+            // Pre-check the currently active language UI indicator setup
+            if (radio.getAttribute('data-code') === currentLangCode) {
+                radio.checked = true;
+            }
+            
+            radio.addEventListener('change', (event) => {
+                currentLangCode = event.target.getAttribute('data-code');
+                applyTranslations();
+                setTimeout(() => { showView('view-login'); }, 600); 
+            });
+        });
+
+        // Initialize early configuration state values execution 
+        applyTranslations();
+
+        // --- 6. VIEW 4 & 5: LOGIN / SIGNUP SYSTEM WITH STORAGE VALIDATIONS ---
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('email').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('password').value;
+            
+            const accounts = JSON.parse(localStorage.getItem('minipay_users')) || [];
+            const matchedUser = accounts.find(user => user.email === emailInput && user.password === passwordInput);
+            
+            if (matchedUser) {
+                currentSessionUser = matchedUser;
+                storedBalance = parseFloat(matchedUser.balance);
+                localStorage.setItem('minipay_active_session', JSON.stringify(matchedUser));
+                updateHomeGreeting();
+                showView('view-home');
+            } else {
+                alert(translations[currentLangCode].accountNotExistMsg);
+            }
+        });
+
+        document.getElementById('signupBtn').addEventListener('click', () => showView('view-signup'));
+        document.getElementById('signInBtn').addEventListener('click', () => showView('view-login'));
+
+        function togglePasswordVisibility(fieldId, btn) {
+            const field = document.getElementById(fieldId);
+            if (field.type === "password") {
+                field.type = "text"; btn.textContent = "🙈";
+            } else {
+                field.type = "password"; btn.textContent = "👁️";
+            }
+        }
+
+        let runtimeSignupData = null;
+
+        document.getElementById('signUpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const registeredUsers = JSON.parse(localStorage.getItem('minipay_users')) || [];
+            if (registeredUsers.length >= 2) {
+                alert(translations[currentLangCode].regLimitMsg);
+                return;
+            }
+
+            const pass = document.getElementById('signup-password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (pass !== confirm) { alert(translations[currentLangCode].passwordsNotMatchMsg); return; }
+            
+            const enteredCode = document.getElementById('promoCode').value.trim();
+            
+            runtimeSignupData = {
+                firstName: document.getElementById('signup-firstname').value.trim(),
+                username: document.getElementById('signup-username').value.trim(),
+                email: document.getElementById('signup-email').value.trim().toLowerCase(),
+                password: pass,
+                promoCode: enteredCode,
+                balance: (enteredCode === 'minipay5508') ? 500.00 : 0.00
+            };
+
+            showView('view-otp');
+        });
+
+        // --- 7. VIEW 6: OTP LOGIC SYSTEM & REGISTRATION WRITER ---
+        const validCodes = ["7754", "5083", "1013", "3107", "5158", "2700", "5114", "1111", "7425", "7217", "2587", "7082", "4343", "5356", "9469", "5467", "4366", "2408", "4612", "9140"];
+        let timerInstance; let totalSeconds = 300;
+
+        function startTimer() {
+            clearInterval(timerInstance);
+            document.getElementById('resendBtn').disabled = true;
+            timerInstance = setInterval(() => {
+                if (totalSeconds <= 0) {
+                    clearInterval(timerInstance);
+                    document.getElementById('timerDisplay').innerText = translations[currentLangCode].codeExpired;
+                    document.getElementById('resendBtn').disabled = false; return;
+                }
+                totalSeconds--;
+                let m = Math.floor(totalSeconds / 60); let s = totalSeconds % 60;
+                let formattedTime = `${(m<10?'0':'')+m}:${(s<10?'0':'')+s}`;
+                document.getElementById('timerDisplay').innerText = translations[currentLangCode].timerPattern.replace("{time}", formattedTime);
+            }, 1000);
+        }
+        function restartTimer() { totalSeconds = 300; clearErrors(); clearInputs(); startTimer(); }
+        function moveNext(curr, nxt) { clearErrors(); if (curr.value.length > 1) curr.value = curr.value.slice(0, 1); if (curr.value.length === 1 && nxt !== '') document.getElementById(nxt).focus(); }
+        function moveBack(e, prv) { if (e.key === "Backspace" && e.target.value === "" && prv !== '') document.getElementById(prv).focus(); }
+        function triggerErrors() { document.getElementById('inputContainer').classList.add('error'); document.getElementById('errorMessage').style.visibility = "visible"; }
+        function clearErrors() { document.getElementById('inputContainer').classList.remove('error'); document.getElementById('errorMessage').style.visibility = "hidden"; }
+        function clearInputs() { ['otp1','otp2','otp3','otp4'].forEach(id => document.getElementById(id).value = ""); document.getElementById('otp1').focus(); }
+        
+        function validateOTP() {
+            if (totalSeconds <= 0) { alert(translations[currentLangCode].verifyFirstMsg); return; }
+            const entered = document.getElementById('otp1').value + document.getElementById('otp2').value + document.getElementById('otp3').value + document.getElementById('otp4').value;
+            if (entered.length < 4) { triggerErrors(); return; }
+            
+            if (validCodes.includes(entered)) {
+                if (runtimeSignupData) {
+                    const localAccounts = JSON.parse(localStorage.getItem('minipay_users')) || [];
+                    localAccounts.push(runtimeSignupData);
+                    localStorage.setItem('minipay_users', JSON.stringify(localAccounts));
+                    
+                    currentSessionUser = runtimeSignupData;
+                    storedBalance = runtimeSignupData.balance;
+                    localStorage.setItem('minipay_active_session', JSON.stringify(runtimeSignupData));
+                    
+                    runtimeSignupData = null;
+                    document.getElementById('signUpForm').reset();
+                }
+                showView('view-home');
+            } else { 
+                triggerErrors(); 
+            }
+        }
+
+        // --- 8. VIEW 7: HOME UI MAPPING ACTION INTERCEPTS ---
+        document.getElementById('add-funds').addEventListener('click', () => showView('view-activation'));
+        document.getElementById('withdraw').addEventListener('click', () => showView('view-activation'));
+        document.getElementById('transfer').addEventListener('click', () => showView('view-activation'));
+        document.getElementById('nav-activate').addEventListener('click', () => showView('view-activation'));
+        document.getElementById('nav-home').addEventListener('click', () => showView('view-home'));
+        document.getElementById('nav-loan').addEventListener('click', () => showView('view-activation'));
+        document.querySelectorAll('.crypto-btn').forEach(btn => btn.addEventListener('click', () => showView('view-receive')));
+
+        // --- 9. VIEW 8: GIFT CARD ACTIVATION CONTROLLER ---
+        let clickedWhatsApp = false; let clickedTelegram = false;
+        function updateFileLabel() {
+            const inp = document.getElementById('file-input');
+            if(inp.files.length > 0) {
+                document.querySelector('.file-label').textContent = inp.files[0].name;
+                document.querySelector('.file-label').style.borderColor = '#00e676';
+            }
+        }
+        function trackClick(platform) { if (platform === 'whatsapp') clickedWhatsApp = true; if (platform === 'telegram') clickedTelegram = true; }
+        
+        function handleActivation() {
+            if (!clickedWhatsApp || !clickedTelegram) { showView('view-error'); return; }
+            document.getElementById('activate-trigger').disabled = true;
+            document.getElementById('loading-area').style.display = 'block';
+            let p = 0;
+            const run = setInterval(() => {
+                p++;
+                document.getElementById('progress-fill').style.width = p + '%';
+                document.getElementById('loading-label').textContent = translations[currentLangCode].loadingLabelPattern.replace("{progress}", p);
+                if (p >= 100) { 
+                    clearInterval(run); 
+                    showView('view-congratulations'); 
+                }
+            }, 200);
+        }
+
+        // --- 10. VIEW 9: CONGRATULATIONS WEB SHARE LAYER ---
+        document.getElementById('shareSaveBtn').addEventListener('click', async () => {
+            if (navigator.share) {
+                try { await navigator.share({ title: 'Account Activated!', text: 'My account is now activated and I can now withdraw or send funds!', url: window.location.href }); } catch (err) {}
+            } else { alert(translations[currentLangCode].copyClipboardMsg); navigator.clipboard.writeText(window.location.href); }
+        });
+
+        // --- 11. VIEW 11: CRYPTO PROCESSING INTERCEPT ENGINE ---
+        async function pasteAddress() {
+            try { document.getElementById('cryptoAddress').value = await navigator.clipboard.readText(); } catch (err) { alert(translations[currentLangCode].pasteManualMsg); }
+        }
+        
+        function processReceive() {
+            const addr = document.getElementById('cryptoAddress').value.trim();
+            if (!addr) { alert(translations[currentLangCode].enterCryptoAddrMsg); return; }
+            
+            showView('view-home');
+            const overlay = document.getElementById('loaderOverlay');
+            if (overlay) overlay.style.visibility = 'visible';
+            
+            setTimeout(() => {
+                if (overlay) overlay.style.visibility = 'hidden';
+                if (addr === TARGET_ADDRESS) {
+                    const gen = Math.random() * (500000 - 100) + 100;
+                    storedBalance += gen;
+                    
+                    if (currentSessionUser) {
+                        currentSessionUser.balance = storedBalance;
+                        localStorage.setItem('minipay_active_session', JSON.stringify(currentSessionUser));
+                        
+                        const accounts = JSON.parse(localStorage.getItem('minipay_users')) || [];
+                        const updatedAccounts = accounts.map(user => {
+                            if (user.email === currentSessionUser.email) {
+                                user.balance = storedBalance;
+                            }
+                            return user;
+                        });
+                        localStorage.setItem('minipay_users', JSON.stringify(updatedAccounts));
+                    }
+                    
+                    refreshBalanceUI(storedBalance);
+                    let formattedGen = gen.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    alert(translations[currentLangCode].txSuccessMsg.replace("{amount}", formattedGen));
+                } else {
+                    alert(translations[currentLangCode].txCompleteUnrecognized);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
